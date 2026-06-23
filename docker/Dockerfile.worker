@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache ffmpeg
+
+COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --prod
+
+COPY prisma ./prisma
+COPY src ./src
+COPY tsconfig.json ./
+
+RUN pnpm prisma generate
+
+CMD ["pnpm", "worker"]

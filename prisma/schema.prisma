@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Podcast {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  coverUrl    String?
+  audioUrl    String
+  sourceType  SourceType
+  sourceUrl   String?
+  platform    Platform?
+  duration    Int?     // 秒
+  status      PodcastStatus @default(PENDING)
+  error       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  transcripts Transcript[]
+  analyses    Analysis[]
+  tasks       Task[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Transcript {
+  id        String   @id @default(cuid())
+  podcastId String
+  podcast   Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  language  String   @default("zh-CN")
+  segments  Json     // [{start: number, end: number, text: string, speaker?: string}]
+  rawText   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([podcastId])
+}
+
+model Analysis {
+  id        String       @id @default(cuid())
+  podcastId String
+  podcast   Podcast      @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  type      AnalysisType
+  content   Json
+  aiModel   String       @default("deepseek-v3")
+  createdAt DateTime     @default(now())
+
+  @@index([podcastId])
+  @@index([type])
+}
+
+model Task {
+  id        String    @id @default(cuid())
+  podcastId String
+  podcast   Podcast   @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  type      TaskType
+  status    TaskStatus @default(PENDING)
+  progress  Int       @default(0) // 0-100
+  error     String?   @db.Text
+  result    Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([podcastId])
+  @@index([status])
+}
+
+enum SourceType {
+  LINK
+  UPLOAD
+}
+
+enum Platform {
+  XIAOYUZHOU
+  APPLE
+  XIMALAYA
+  NETEASE
+  CUSTOM
+}
+
+enum PodcastStatus {
+  PENDING
+  FETCHING
+  TRANSCRIBING
+  ANALYZING
+  DONE
+  ERROR
+}
+
+enum AnalysisType {
+  SUMMARY
+  TIMELINE
+  KEY_TOPICS
+  RESOURCES
+  QUOTES
+}
+
+enum TaskType {
+  FETCH_METADATA
+  TRANSCRIBE
+  ANALYZE
+}
+
+enum TaskStatus {
+  PENDING
+  RUNNING
+  DONE
+  ERROR
+}
