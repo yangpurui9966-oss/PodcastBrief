@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import { db } from '../lib/db';
 import { analyzeTranscript } from '../lib/ai';
+import { transcribeAudio } from '../lib/transcribe';
 import { createPodcastWorker } from '../lib/queue';
 import logger from '../lib/logger';
 
@@ -33,16 +34,19 @@ async function processPodcast(job: Job<{ podcastId: string }>) {
       data: { status: 'TRANSCRIBING' },
     });
 
-    // TODO: 实现语音转写（阿里云智能语音）
-    // const transcript = await transcribeAudio(podcast.audioUrl);
+    // 4. 语音转写（MLX-Whisper 本地服务）
+    if (!podcast.audioUrl) {
+      throw new Error('Audio URL not found');
+    }
+    await transcribeAudio(podcast.audioUrl, podcastId);
 
-    // 4. 更新状态为分析中
+    // 5. 更新状态为分析中
     await db.podcast.update({
       where: { id: podcastId },
       data: { status: 'ANALYZING' },
     });
 
-    // 5. 获取转写文本
+    // 6. 获取转写文本
     const transcriptRecord = await db.transcript.findFirst({
       where: { podcastId },
     });
@@ -51,10 +55,10 @@ async function processPodcast(job: Job<{ podcastId: string }>) {
       throw new Error('Transcript not found');
     }
 
-    // 6. AI 分析
+    // 7. AI 分析（DeepSeek）
     const analysis = await analyzeTranscript(transcriptRecord.rawText);
 
-    // 7. 保存分析结果
+    // 8. 保存分析结果
     await db.analysis.createMany({
       data: [
         {
@@ -80,7 +84,7 @@ async function processPodcast(job: Job<{ podcastId: string }>) {
       ],
     });
 
-    // 8. 完成
+    // 9. 完成
     await db.podcast.update({
       where: { id: podcastId },
       data: { status: 'DONE' },

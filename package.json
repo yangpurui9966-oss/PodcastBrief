@@ -11,6 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "redis": "docker compose -f docker/docker-compose.yml up -d redis",
+    "whisper": "cd services/whisper && source .venv/bin/activate && python main.py",
     "worker": "tsx src/workers/podcast.ts"
   },
   "dependencies": {
@@ -24,8 +26,7 @@
     "axios": "^1.7.2",
     "pino": "^9.2.0",
     "cheerio": "^1.0.0-rc.12",
-    "ali-oss": "^6.21.0",
-    "@alicloud/nls-2019-02-28": "^2.0.24"
+    "ali-oss": "^6.21.0"
   },
   "devDependencies": {
     "typescript": "^5.5.2",

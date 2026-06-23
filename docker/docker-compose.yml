@@ -9,18 +9,13 @@ services:
     volumes:
       - redis-data:/data
 
-  worker:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.worker
-    restart: unless-stopped
-    env_file:
-      - ../.env
-    depends_on:
-      - redis
-    volumes:
-      - worker-logs:/app/logs
+  # 注意：Worker 和 MLX-Whisper 服务在 macOS 上本地运行，不通过 Docker 部署
+  # 原因：MLX-Whisper 依赖 Apple Silicon GPU，必须在 macOS 上运行
+  # 本地开发启动方式：
+  #   1. pnpm redis      # 启动 Redis（Docker）
+  #   2. pnpm whisper    # 启动 MLX-Whisper Python 服务
+  #   3. pnpm worker     # 启动 Node.js Worker
+  #   4. pnpm dev        # 启动 Next.js 开发服务器
 
 volumes:
   redis-data:
-  worker-logs:
